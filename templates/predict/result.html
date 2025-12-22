@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+      <div class="card shadow-lg rounded-4 border-0">
+        <div class="card-header bg-success text-white text-center rounded-top-4">
+          <h3 class="mb-0">🧬 Prediction Results</h3>
+          <small class="text-light">Based on your provided health information</small>
+
+          {% if model_accuracy %}
+            <div class="alert alert-info mt-3 mb-0">
+              <strong>Overall Estimated Accuracy:</strong> {{ model_accuracy }}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="card-body bg-light rounded-bottom-4">
+          {% if risks %}
+            {% for risk in risks %}
+            <div class="card mb-4
+              {% if risk.risk == 'High' %}
+                border-danger
+              {% elif risk.risk == 'Medium' %}
+                border-warning
+              {% else %}
+                border-success
+              {% endif %}
+            ">
+              <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+                <span>{{ risk.disease }} - {{ risk.risk }} Risk</span>
+                {% if risk.accuracy %}
+                  {% if risk.accuracy|floatformat:2 >= 85 %}
+                    <span class="badge bg-success">Accuracy: {{ risk.accuracy }}</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">Accuracy: {{ risk.accuracy }}</span>
+                  {% endif %}
+                {% endif %}
+              </div>
+              <div class="card-body">
+                {% if risk.symptoms %}
+                  <p><strong>Symptoms:</strong> {{ risk.symptoms|join:", " }}</p>
+                {% endif %}
+                {% if risk.suggestions %}
+                  <p><strong>Suggestions:</strong></p>
+                  <ul class="mb-0">
+                    {% for suggestion in risk.suggestions %}
+                      <li>{{ suggestion }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="alert alert-secondary text-center">
+              No prediction results available.
+            </div>
+          {% endif %}
+
+          <div class="text-center mt-4">
+            <a href="{% url 'predict' %}" class="btn btn-outline-primary btn-lg rounded-pill">
+              <i class="bi bi-arrow-left me-1"></i> Back to Form
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

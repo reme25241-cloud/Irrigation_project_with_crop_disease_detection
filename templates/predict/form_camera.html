@@ -1,0 +1,380 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow p-4 bg-light border-success border-3">
+        <h3 class="text-center mb-4 text-success">🌿 Live Plant Disease Detection</h3>
+
+        <!-- Camera Controls -->
+        <div class="text-center mb-3">
+            <button id="startCamera" class="btn btn-success me-2">📷 Start Camera</button>
+            <button id="stopCamera" class="btn btn-danger">⛔ Stop Camera</button>
+        </div>
+
+        <!-- Webcam -->
+        <div class="text-center">
+            <video id="webcam"
+                   autoplay
+                   playsinline
+                   class="img-fluid rounded border border-success"
+                   style="max-height:320px; display:none; background:#e6f9e6;">
+            </video>
+        </div>
+
+        <!-- Prediction Output -->
+        <div class="mt-4">
+            <div id="label-container"
+                 class="bg-success-subtle p-3 rounded shadow-sm">
+                <p class="text-muted text-center">Start the camera to begin detection</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TensorFlow + Teachable Machine -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+
+<script>
+// =======================================================
+// Disease Information Dictionary (UNCHANGED)
+// =======================================================
+// ===================== Disease Information Dictionary =====================
+const cropDiseaseInfo = {
+    "Apple Healthy": {
+        cause: "None",
+        symptoms: "Uniform green leaves, clean fruits, no lesions or spots",
+        transmission: "N/A",
+        prevention: "Maintain orchard hygiene, proper irrigation and fertilization",
+        treatment: "N/A",
+        impact: "Marketable and consumable",
+        notes: "Regular monitoring is essential"
+    },
+    "Apple Scab": {
+        cause: "Fungus Venturia inaequalis",
+        symptoms: "Olive-green to brown velvety spots on leaves and fruit",
+        transmission: "Airborne spores, splashing rain",
+        prevention: "Use resistant varieties, prune for airflow, remove fallen leaves",
+        treatment: "Apply fungicides (captan, mancozeb) during growing season",
+        impact: "Fruit blemishes, reduced yield and quality",
+        notes: "One of the most common apple diseases worldwide"
+    },
+    "Black Apple Rot": {
+        cause: "Fungus Botryosphaeria obtusa",
+        symptoms: "Concentric brown rings on fruit, limb dieback, leaf spots",
+        transmission: "Fungal spores spread by wind and rain",
+        prevention: "Remove infected twigs, prune regularly, improve airflow",
+        treatment: "Fungicide sprays during bloom and fruit development",
+        impact: "Severe yield loss if unmanaged",
+        notes: "Also causes ‘frogeye leaf spot’ on leaves"
+    },
+    "Cedar Apple Rust": {
+        cause: "Fungus Gymnosporangium juniperi-virginianae",
+        symptoms: "Yellow-orange leaf spots, fruit deformation, gelatinous galls on junipers",
+        transmission: "Spores alternate between apple and cedar/juniper trees",
+        prevention: "Remove nearby junipers, use resistant apple varieties",
+        treatment: "Fungicide sprays in spring",
+        impact: "Defoliation, poor fruit quality, weakened trees",
+        notes: "Requires two hosts to complete its life cycle"
+    },
+    "Cherry Healthy": {
+        cause: "None",
+        symptoms: "Healthy green leaves, clean fruit, strong growth",
+        transmission: "N/A",
+        prevention: "Balanced nutrition and irrigation",
+        treatment: "N/A",
+        impact: "Good quality yield",
+        notes: "Monitor for fungal infections in humid conditions"
+    },
+    "Powdery Mildew": {
+        cause: "Fungus Podosphaera leucotricha (on apple, also other fungi on different hosts)",
+        symptoms: "White powdery fungal growth on leaves, shoots, and fruit",
+        transmission: "Airborne conidia spores",
+        prevention: "Prune for airflow, avoid excess nitrogen",
+        treatment: "Sulfur, triazole fungicides",
+        impact: "Stunted growth, reduced yield and quality",
+        notes: "Favors warm, dry days with humid nights"
+    },
+    "Co Healthy": {
+        cause: "None",
+        symptoms: "Green leaves, normal photosynthesis, no lesions",
+        transmission: "N/A",
+        prevention: "Crop rotation and healthy soil management",
+        treatment: "N/A",
+        impact: "Good yield potential",
+        notes: "Likely refers to ‘Corn Healthy’"
+    },
+    "Common Rust": {
+        cause: "Fungus Puccinia sorghi",
+        symptoms: "Reddish-brown pustules on both sides of corn leaves",
+        transmission: "Windborne spores",
+        prevention: "Use resistant hybrids, rotate crops",
+        treatment: "Fungicide if severe",
+        impact: "Yield reduction if leaf area loss is high",
+        notes: "More severe in cool, humid climates"
+    },
+    "Gray Leaf Spot": {
+        cause: "Fungus Cercospora zeae-maydis",
+        symptoms: "Gray rectangular lesions on corn leaves",
+        transmission: "Crop residue, wind and rain-splashed spores",
+        prevention: "Rotate crops, till crop residue, resistant hybrids",
+        treatment: "Fungicide during tasseling stage if needed",
+        impact: "Severe yield loss in warm, humid conditions",
+        notes: "Emerging problem in major corn-growing regions"
+    },
+    "Northern Leaf Blight": {
+        cause: "Fungus Exserohilum turcicum",
+        symptoms: "Large cigar-shaped tan lesions on leaves",
+        transmission: "Windborne spores from infected residue",
+        prevention: "Crop rotation, resistant varieties",
+        treatment: "Fungicides during disease onset",
+        impact: "Severe yield loss if unmanaged",
+        notes: "Common in temperate corn-growing regions"
+    },
+    "aGrape Healthy": {
+        cause: "None",
+        symptoms: "Clean, green leaves and healthy fruit clusters",
+        transmission: "N/A",
+        prevention: "Proper pruning and canopy management",
+        treatment: "N/A",
+        impact: "High quality grapes for wine or consumption",
+        notes: "Monitor for mildew and rot diseases"
+    },
+    "Esca": {
+        cause: "Fungal complex (Phaeomoniella, Phaeoacremonium, Fomitiporia)",
+        symptoms: "Tiger-striped leaf necrosis, white rot in trunks, sudden vine death",
+        transmission: "Wounds during pruning, fungal spores",
+        prevention: "Sanitize tools, careful pruning, avoid wounds",
+        treatment: "No effective cure, remove infected vines",
+        impact: "Vineyard decline and major crop loss",
+        notes: "One of the most destructive grapevine trunk diseases"
+    },
+    "Grape Black Rot": {
+        cause: "Fungus Guignardia bidwellii",
+        symptoms: "Brown circular leaf spots, mummified berries",
+        transmission: "Overwintering mummies release spores",
+        prevention: "Remove mummified berries, prune vines",
+        treatment: "Fungicides at bloom and fruit set",
+        impact: "Severe yield loss in humid conditions",
+        notes: "Highly destructive if unmanaged"
+    },
+    "Leaf Blight Grape": {
+        cause: "Fungus Pseudocercospora vitis",
+        symptoms: "Angular leaf spots turning necrotic, leaf drop",
+        transmission: "Windborne spores, rain splash",
+        prevention: "Prune canopy, improve airflow",
+        treatment: "Fungicide sprays",
+        impact: "Reduced photosynthesis and fruit yield",
+        notes: "Favored by warm, wet weather"
+    },
+    "aHealthy Peach": {
+        cause: "None",
+        symptoms: "Vibrant foliage, smooth fruit, no lesions",
+        transmission: "N/A",
+        prevention: "Good orchard management",
+        treatment: "N/A",
+        impact: "Marketable fruit",
+        notes: "Monitor for peach leaf curl and bacterial spot"
+    },
+    "Peach Bacterial Spot": {
+        cause: "Bacterium Xanthomonas arboricola pv. pruni",
+        symptoms: "Dark, water-soaked leaf spots, fruit cracking",
+        transmission: "Rain splash, wind, contaminated tools",
+        prevention: "Plant resistant cultivars, orchard sanitation",
+        treatment: "Copper sprays (limited effectiveness)",
+        impact: "Reduced fruit quality and yield",
+        notes: "Most destructive bacterial disease of peaches"
+    },
+    "aPepperHealthy": {
+        cause: "None",
+        symptoms: "Glossy leaves, healthy fruit set, no lesions",
+        transmission: "N/A",
+        prevention: "Balanced nutrition and irrigation",
+        treatment: "N/A",
+        impact: "Good market quality",
+        notes: "Monitor for bacterial and viral diseases"
+    },
+    "Pepper Bacterial Spot": {
+        cause: "Bacterium Xanthomonas campestris pv. vesicatoria",
+        symptoms: "Dark, water-soaked spots with yellow halos on leaves and fruit",
+        transmission: "Rain splash, tools, infected seed",
+        prevention: "Certified seed, copper sprays, resistant varieties",
+        treatment: "Copper-based fungicides, bactericides",
+        impact: "Severe losses in hot, humid climates",
+        notes: "One of the most serious pepper diseases"
+    },
+    "aHealthy Potato": {
+        cause: "None",
+        symptoms: "Green, vigorous foliage, no lesions or wilting",
+        transmission: "N/A",
+        prevention: "Crop rotation and good soil health",
+        treatment: "N/A",
+        impact: "Good tuber yield",
+        notes: "Monitor for blights and bacterial wilt"
+    },
+    "Early Blight Potato": {
+        cause: "Fungus Alternaria solani",
+        symptoms: "Concentric dark leaf spots, early defoliation",
+        transmission: "Spores from soil or plant debris",
+        prevention: "Crop rotation, resistant varieties, remove debris",
+        treatment: "Fungicides (chlorothalonil, mancozeb)",
+        impact: "Reduced tuber yield and quality",
+        notes: "Often mistaken for nutrient deficiency"
+    },
+    "Late Blight Potato": {
+        cause: "Oomycete Phytophthora infestans",
+        symptoms: "Water-soaked lesions, white mold on underside of leaves, tuber rot",
+        transmission: "Airborne sporangia, rain splash, infected tubers",
+        prevention: "Use certified seed, resistant varieties, proper storage",
+        treatment: "Fungicide sprays, destroy infected plants",
+        impact: "Can cause total crop failure",
+        notes: "Responsible for the Irish potato famine"
+    },
+    "Healthy Strawberry": {
+        cause: "None",
+        symptoms: "Healthy leaves, runners, and red fruit without spots",
+        transmission: "N/A",
+        prevention: "Good soil drainage and crop rotation",
+        treatment: "N/A",
+        impact: "High quality yield",
+        notes: "Monitor for fungal diseases like leaf scorch"
+    },
+    "Strawberry Leaf Scorch": {
+        cause: "Fungus Diplocarpon earlianum",
+        symptoms: "Purple spots with light centers on leaves, reduced vigor",
+        transmission: "Rain splash, infected plant debris",
+        prevention: "Crop rotation, resistant varieties, remove debris",
+        treatment: "Fungicides (captan, thiram)",
+        impact: "Reduced photosynthesis and fruit production",
+        notes: "Severe infections cause plant collapse"
+    },
+    "aTomato Healthy": {
+        cause: "None",
+        symptoms: "Green leaves, healthy stems, firm red fruits",
+        transmission: "N/A",
+        prevention: "Proper irrigation and fertilization",
+        treatment: "N/A",
+        impact: "Marketable tomatoes",
+        notes: "Monitor for blights and bacterial diseases"
+    },
+    "Tomato Bacterial Spot": {
+        cause: "Bacterium Xanthomonas campestris pv. vesicatoria",
+        symptoms: "Small, dark, water-soaked spots on leaves and fruits",
+        transmission: "Infected seed, tools, rain splash",
+        prevention: "Use certified seeds, copper sprays, crop rotation",
+        treatment: "Copper-based bactericides (limited effect)",
+        impact: "Severe yield loss in humid climates",
+        notes: "Similar to pepper bacterial spot"
+    },
+    "Tomato Early Blight": {
+        cause: "Fungus Alternaria solani",
+        symptoms: "Concentric brown leaf spots, yellowing, stem lesions",
+        transmission: "Airborne spores, infected debris",
+        prevention: "Crop rotation, resistant varieties",
+        treatment: "Fungicides (chlorothalonil, mancozeb)",
+        impact: "Reduced fruit set and yield",
+        notes: "Common in warm, humid regions"
+    },
+    "Tomato Late Blight": {
+        cause: "Oomycete Phytophthora infestans",
+        symptoms: "Dark, water-soaked lesions on leaves and fruit, white mold under leaves",
+        transmission: "Airborne spores, rain splash, infected seed tubers",
+        prevention: "Use resistant cultivars, remove infected plants",
+        treatment: "Fungicide sprays (systemic and protectant types)",
+        impact: "Can wipe out entire tomato fields quickly",
+        notes: "Same pathogen as potato late blight"
+    }
+};
+
+// =======================================================
+// Model Setup
+// =======================================================
+const MODEL_URL = 'https://teachablemachine.withgoogle.com/models/bZ27fNaAi/';
+let model;
+let webcamStream = null;
+let isCameraRunning = false;
+
+const webcamElement = document.getElementById("webcam");
+const labelContainer = document.getElementById("label-container");
+
+// Load Model
+async function initModel() {
+    model = await tmImage.load(
+        MODEL_URL + "model.json",
+        MODEL_URL + "metadata.json"
+    );
+}
+
+// =======================================================
+// Camera Control
+// =======================================================
+async function startCamera() {
+    if (isCameraRunning) return;
+
+    await initModel();
+
+    webcamStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+        audio: false
+    });
+
+    webcamElement.srcObject = webcamStream;
+    webcamElement.style.display = "block";
+    isCameraRunning = true;
+
+    predictionLoop();
+}
+
+function stopCamera() {
+    if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+    }
+    webcamElement.style.display = "none";
+    labelContainer.innerHTML = `<p class="text-muted text-center">Camera stopped</p>`;
+    isCameraRunning = false;
+}
+
+// =======================================================
+// Prediction Loop
+// =======================================================
+async function predictionLoop() {
+    if (!isCameraRunning) return;
+
+    const predictions = await model.predict(webcamElement, false);
+    const best = predictions.reduce((a, b) =>
+        a.probability > b.probability ? a : b
+    );
+
+    const confidence = (best.probability * 100).toFixed(2);
+    const disease = cropDiseaseInfo[best.className];
+    const isHealthy = best.className.toLowerCase().includes("healthy");
+
+    if (confidence < 90) {
+        labelContainer.innerHTML = `
+            <h5 class="text-warning text-center">Scanning… (${confidence}%)</h5>
+            <p class="text-center text-muted">Hold camera steady</p>
+        `;
+    } else if (disease) {
+        labelContainer.innerHTML = `
+            <h5 class="text-success">${best.className} (${confidence}%)</h5>
+            ${!isHealthy ? `<span class="badge bg-danger mb-2">Disease Detected</span>` : ''}
+            <ul class="list-group mt-2">
+                <li class="list-group-item"><strong>Cause:</strong> ${disease.cause}</li>
+                <li class="list-group-item"><strong>Symptoms:</strong> ${disease.symptoms}</li>
+                <li class="list-group-item"><strong>Prevention:</strong> ${disease.prevention}</li>
+                <li class="list-group-item"><strong>Treatment:</strong> ${disease.treatment}</li>
+                <li class="list-group-item"><strong>Impact:</strong> ${disease.impact}</li>
+            </ul>
+        `;
+    }
+
+    requestAnimationFrame(predictionLoop);
+}
+
+// =======================================================
+// Events
+// =======================================================
+document.getElementById("startCamera").addEventListener("click", startCamera);
+document.getElementById("stopCamera").addEventListener("click", stopCamera);
+</script>
+{% endblock %}

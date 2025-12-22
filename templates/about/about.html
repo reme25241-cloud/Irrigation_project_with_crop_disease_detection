@@ -1,0 +1,44 @@
+<!-- about.html -->
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h2 class="card-title text-success">About This Project</h2>
+      <hr>
+
+      <p>This web-based system is designed to help users detect plant diseases from uploaded images using an AI-powered model. It combines <strong>machine learning</strong>, <strong>Django</strong>, and <strong>Bootstrap</strong> to deliver accurate predictions and practical guidance for farmers, students, and agricultural researchers.</p>
+
+      <h4 class="mt-4">🌿 Key Features</h4>
+      <ul>
+        <li><strong>Image Upload & Preview:</strong> Upload plant leaf/fruit images and preview them before classification.</li>
+        <li><strong>AI-Powered Prediction:</strong> A TensorFlow model trained using Google Teachable Machine predicts the plant condition with a confidence score.</li>
+        <li><strong>27 Classes:</strong> Supports Apple, Grape, Tomato, Potato, Strawberry, Pepper, Peach — each with healthy and diseased classes.</li>
+        <li><strong>Disease Information:</strong> Displays causes, symptoms, treatment, and prevention tips based on prediction.</li>
+        <li><strong>Low Confidence Warning:</strong> If confidence is below 90%, users are alerted to double-check the result.</li>
+        <li><strong>Database Storage:</strong> Stores prediction history in an SQLite database for tracking and analysis.</li>
+        <li><strong>Responsive UI:</strong> Clean, mobile-friendly interface built with Bootstrap 5.</li>
+        <li><strong>Backend API:</strong> A POST endpoint handles prediction and storage securely with CSRF protection.</li>
+      </ul>
+
+      <h4 class="mt-4">🛠️ Tech Stack</h4>
+      <table class="table table-bordered">
+        <thead class="table-success">
+          <tr>
+            <th>Component</th>
+            <th>Technology</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Frontend</td><td>HTML, Bootstrap 5, JavaScript</td></tr>
+          <tr><td>Backend</td><td>Django, Python</td></tr>
+          <tr><td>ML Model</td><td>TensorFlow (CNN)</td></tr>
+          <tr><td>Database</td><td>SQLite</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
