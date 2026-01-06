@@ -26,6 +26,7 @@ def iot_alert(request):
 
     # ---- Alert condition ----
     alert_triggered = temperature > 40 or relay != "Relay 0"
+    print(alert_triggered)
 
     # ---- Save to DB ----
     alert = IoTAlert.objects.create(
@@ -72,3 +73,4 @@ def alert_dashboard(request):
     }
 
     return render(request, "alerts/alert_dashboard.html", context)
+
