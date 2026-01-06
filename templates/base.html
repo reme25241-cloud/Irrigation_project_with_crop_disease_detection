@@ -99,27 +99,77 @@
             <h1 class="sitename">🌿 Plant Disease Detection</h1>
         </a>
 
-        <nav class="navmenu">
-            <ul class="d-flex list-unstyled mb-0">
-                <li class="me-3"><a href="/" class="text-white">Home</a></li>
-                <li class="me-3"><a href="{% url 'about' %}" class="text-white">About</a></li>
-                <li class="me-3"><a href="{% url 'profile' %}" class="text-white">Profile</a></li>
-                <li class="dropdown"><a href="#"><span>Dashboard</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
-                    <ul>
-                      <li><a href="{% url 'dashboard' %}">ML History</a></li>
-                      <li><a href="{% url 'alert_dashboard' %}">Iot History</a></li>
-                    </ul>
-                </li>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
 
-                <li class="dropdown me-3">
-                    <a class="dropdown-toggle text-white" data-bs-toggle="dropdown" href="#">Predict</a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{% url 'predict' %}">Image Based</a></li>
-                        <li><a class="dropdown-item" href="{% url 'predict_live_input' %}">Camera Based</a></li>
-                    </ul>
-                </li>
-            </ul>
-        </nav>
+    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+      <!-- Home -->
+      <li class="nav-item">
+        <a class="nav-link active" href="/">
+          <i class="bi bi-house-door"></i> Home
+        </a>
+      </li>
+
+      <!-- About -->
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'about' %}">
+          <i class="bi bi-info-circle"></i> About
+        </a>
+      </li>
+
+      <!-- Profile -->
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'profile' %}">
+          <i class="bi bi-person-circle"></i> Profile
+        </a>
+      </li>
+
+      <!-- Dashboard Dropdown -->
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" role="button"
+           data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+        <ul class="dropdown-menu">
+          <li>
+            <a class="dropdown-item" href="{% url 'dashboard' %}">
+              <i class="bi bi-graph-up-arrow"></i> ML History
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" href="{% url 'alert_dashboard' %}">
+              <i class="bi bi-cpu"></i> IoT History
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- Predict Dropdown -->
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" role="button"
+           data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-magic"></i> Predict
+        </a>
+        <ul class="dropdown-menu">
+          <li>
+            <a class="dropdown-item" href="{% url 'predict' %}">
+              <i class="bi bi-image"></i> Image Based
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" href="{% url 'predict_live_input' %}">
+              <i class="bi bi-camera-video"></i> Camera Based
+            </a>
+          </li>
+        </ul>
+      </li>
+
+    </ul>
+
+  </div>
+</nav>
+
 
         {% if user.is_authenticated %}
         <form method="post" action="{% url 'logout' %}">
@@ -222,4 +272,5 @@
 
 </body>
 </html>
+
 
