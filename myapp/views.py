@@ -63,70 +63,10 @@ def edit_profile(request):
 # dashboard
 User = get_user_model()  # Refers to CustomUser
 
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from django.core.mail import send_mail
-from django.conf import settings
-
-from .models import DiseasePrediction
-
-
 @login_required
 def dashboard(request):
-    # Get latest prediction
-    latest_prediction = DiseasePrediction.objects.order_by('-created_at').first()
-
-    # Send email only if a prediction exists
-    if latest_prediction:
-        subject = f"Latest Disease Prediction: {latest_prediction.disease_name}"
-
-        message = f"""
-Disease Name: {latest_prediction.disease_name}
-
-Cause:
-{latest_prediction.cause or 'N/A'}
-
-Symptoms:
-{latest_prediction.symptoms or 'N/A'}
-
-Transmission:
-{latest_prediction.transmission or 'N/A'}
-
-Prevention:
-{latest_prediction.prevention or 'N/A'}
-
-Treatment:
-{latest_prediction.treatment or 'N/A'}
-
-Impact:
-{latest_prediction.impact or 'N/A'}
-
-Notes:
-{latest_prediction.notes or 'N/A'}
-
-Predicted At:
-{latest_prediction.created_at}
-        """
-
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[
-                'kottalamanim@gmail.com',
-                'aishumujagoni123@gmail.com'
-            ],
-            fail_silently=False,
-        )
-
-    # Dashboard data
     predictions = DiseasePrediction.objects.all().order_by('-created_at')
-
-    return render(
-        request,
-        'dashboard/dashboard.html',
-        {'predictions': predictions}
-    )
+    return render(request, 'dashboard/dashboard.html', {'predictions': predictions})
 
 
 
@@ -308,5 +248,4 @@ def predict(request):
 def predict_live_input(request):
     """Prediction form page"""
     return render(request, 'predict/form_camera.html')
-
 
