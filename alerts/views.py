@@ -63,8 +63,40 @@ Immediate action recommended.
 from django.shortcuts import render
 from .models import IoTAlert
 
+from django.shortcuts import render
+from django.core.mail import send_mail
+from django.conf import settings
+
+from .models import IoTAlert
+
+
 def alert_dashboard(request):
     alerts = IoTAlert.objects.all().order_by("-created_at")
+    latest_alert = alerts.first()
+
+    # Send email only if an alert exists
+    if latest_alert:
+        subject = "Latest IoT Alert Notification"
+
+        message = f"""
+ALERT DETAILS
+
+Alert Triggered: {latest_alert.alert_triggered}
+Message: {latest_alert.message if hasattr(latest_alert, 'message') else 'N/A'}
+
+Created At: {latest_alert.created_at}
+        """
+
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[
+                "kottalamanim@gmail.com",
+                "aishumujagoni123@gmail.com",
+            ],
+            fail_silently=False,
+        )
 
     context = {
         "alerts": alerts,
@@ -73,4 +105,6 @@ def alert_dashboard(request):
     }
 
     return render(request, "alerts/alert_dashboard.html", context)
+
+
 
